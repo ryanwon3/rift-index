@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Explore · Rift Index{% endblock %}
+{% block content %}
+  <section class="page-heading explore-heading" aria-labelledby="explore-title">
+    <p class="eyebrow">Semantic voice-line search</p>
+    <h1 id="explore-title">Explore the archive</h1>
+    <p>Find lines by theme, mood, or idea—even when the champions use different words.</p>
+  </section>
+
+  <section class="search-workspace" aria-label="Voice-line search">
+    <form id="search-form" class="search-form" novalidate>
+      <label class="search-label" for="query-input">What are the champions talking about?</label>
+      <div class="search-row">
+        <div class="query-field">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input
+            id="query-input"
+            name="q"
+            type="search"
+            minlength="2"
+            maxlength="200"
+            placeholder="food, old gods, friendship, revenge…"
+            autocomplete="off"
+            required
+          >
+        </div>
+        <button class="primary-button" type="submit">Search archive</button>
+      </div>
+
+      <div class="filter-bar">
+        <label class="field-label" for="champion-select">
+          Champion
+          <select id="champion-select" name="champion">
+            <option value="">All champions</option>
+          </select>
+        </label>
+
+        <fieldset class="line-type-field">
+          <legend>Line type</legend>
+          <div class="segmented-control">
+            <label><input type="radio" name="line_type" value="spoken" checked><span>Spoken</span></label>
+            <label><input type="radio" name="line_type" value="action"><span>Actions</span></label>
+            <label><input type="radio" name="line_type" value="all"><span>All</span></label>
+          </div>
+        </fieldset>
+
+        <label class="field-label compact-field" for="limit-select">
+          Results
+          <select id="limit-select" name="limit">
+            <option value="12">12</option>
+            <option value="24">24</option>
+            <option value="36">36</option>
+          </select>
+        </label>
+      </div>
+    </form>
+
+    <div class="suggestion-row" aria-label="Try a sample search">
+      <span>Try</span>
+      <button type="button" data-query="food and being hungry">Food &amp; hunger</button>
+      <button type="button" data-query="friendship and loyalty">Friendship</button>
+      <button type="button" data-query="fate and death">Fate &amp; death</button>
+    </div>
+  </section>
+
+  <section class="results-section" aria-labelledby="results-title">
+    <div class="results-heading">
+      <div>
+        <p class="eyebrow">Closest meanings</p>
+        <h2 id="results-title">Search results</h2>
+      </div>
+      <p class="result-count" id="result-count">Ready when you are</p>
+    </div>
+    <div id="status-region" class="status-panel" aria-live="polite">
+      <span class="status-glyph" aria-hidden="true">✦</span>
+      <div><strong>Ask the archive</strong><p>Use a theme or idea above to uncover related lines.</p></div>
+    </div>
+    <div id="results-grid" class="results-grid" aria-live="polite"></div>
+  </section>
+{% endblock %}
+

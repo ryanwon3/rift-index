@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Annotated, Literal
 
 import chromadb
 from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from app.config import DATA_DIR, DATASET_COMMIT, EMBEDDING_MODEL
@@ -12,6 +16,8 @@ from app.models import ChampionSummary, SearchResult
 from app.search import IndexUnavailableError, SearchService
 
 LineType = Literal["spoken", "action", "all"]
+APP_DIR = Path(__file__).resolve().parent
+templates = Jinja2Templates(directory=APP_DIR / "templates")
 
 
 class SearchResponse(BaseModel):
@@ -43,9 +49,34 @@ def default_search_service() -> SearchService:
 def create_app(service: SearchService | None = None) -> FastAPI:
     app = FastAPI(title="Rift Index", version="0.1.0")
     app.state.search_service = service or default_search_service()
+    app.mount("/static", StaticFiles(directory=APP_DIR / "static"), name="static")
 
     def get_service() -> SearchService:
         return app.state.search_service
+
+    @app.get("/", response_class=HTMLResponse, include_in_schema=False)
+    def explore_page(request: Request) -> HTMLResponse:
+        return templates.TemplateResponse(
+            request=request,
+            name="explore.html",
+            context={"page": "explore"},
+        )
+
+    @app.get("/champions", response_class=HTMLResponse, include_in_schema=False)
+    def champions_page(request: Request) -> HTMLResponse:
+        return templates.TemplateResponse(
+            request=request,
+            name="champions.html",
+            context={"page": "champions"},
+        )
+
+    @app.get("/about", response_class=HTMLResponse, include_in_schema=False)
+    def about_page(request: Request) -> HTMLResponse:
+        return templates.TemplateResponse(
+            request=request,
+            name="about.html",
+            context={"page": "about"},
+        )
 
     @app.get("/api/search", response_model=SearchResponse)
     def search(

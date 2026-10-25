@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Champions · Rift Index{% endblock %}
+{% block content %}
+  <section class="page-heading" aria-labelledby="champions-title">
+    <p class="eyebrow">163 indexed voices</p>
+    <h1 id="champions-title">Champion directory</h1>
+    <p>Browse the snapshot by speaker, then jump into a focused semantic search.</p>
+  </section>
+
+  <section class="directory-tools" aria-label="Filter champions">
+    <label for="champion-filter">Filter by champion name</label>
+    <input id="champion-filter" type="search" placeholder="Start typing a name…" autocomplete="off">
+    <p id="champion-count" aria-live="polite">Loading directory…</p>
+  </section>
+
+  <section id="champion-directory" class="champion-directory" aria-live="polite"></section>
+{% endblock %}
+

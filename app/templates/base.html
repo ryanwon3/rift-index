@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Search League of Legends voice-line transcripts by meaning.">
+    <title>{% block title %}Rift Index{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Marcellus&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body data-page="{{ page }}">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="app-shell">
+      <aside class="site-sidebar">
+        <a class="brand" href="/" aria-label="Rift Index home">
+          <span class="brand-mark" aria-hidden="true">RI</span>
+          <span>
+            <strong>Rift Index</strong>
+            <small>Semantic archive</small>
+          </span>
+        </a>
+
+        <nav class="primary-nav" aria-label="Primary navigation">
+          <a class="nav-link" href="/" {% if page == "explore" %}aria-current="page"{% endif %}>
+            <span aria-hidden="true">⌕</span> Explore
+          </a>
+          <a class="nav-link" href="/champions" {% if page == "champions" %}aria-current="page"{% endif %}>
+            <span aria-hidden="true">◇</span> Champions
+          </a>
+          <a class="nav-link" href="/about" {% if page == "about" %}aria-current="page"{% endif %}>
+            <span aria-hidden="true">◎</span> About the data
+          </a>
+        </nav>
+
+        <div class="sidebar-note">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span>Local embeddings<br><small>No API key required</small></span>
+        </div>
+      </aside>
+
+      <div class="content-shell">
+        <header class="mobile-header">
+          <a class="brand compact" href="/"><span class="brand-mark">RI</span><strong>Rift Index</strong></a>
+          <a class="mobile-nav-link" href="/champions">Champions</a>
+          <a class="mobile-nav-link" href="/about">About</a>
+        </header>
+        <main id="main-content" class="main-content">
+          {% block content %}{% endblock %}
+        </main>
+        <footer class="site-footer">
+          <span>Built for exploration, not affiliated with Riot Games.</span>
+          <a href="/about">Dataset notes</a>
+        </footer>
+      </div>
+    </div>
+  </body>
+</html>
+

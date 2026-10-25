@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}About the data · Rift Index{% endblock %}
+{% block content %}
+  <section class="page-heading about-heading" aria-labelledby="about-title">
+    <p class="eyebrow">Transparent by design</p>
+    <h1 id="about-title">About the archive</h1>
+    <p>What is indexed, where it came from, and what a similarity score actually means.</p>
+  </section>
+
+  <section class="metric-grid" aria-label="Dataset summary">
+    <article><strong>32,392</strong><span>cleaned transcript rows</span></article>
+    <article><strong>163 champions</strong><span>represented in the snapshot</span></article>
+    <article><strong>31,240</strong><span>spoken lines by default</span></article>
+  </section>
+
+  <div class="about-grid">
+    <section class="prose-section">
+      <p class="section-number">01 / Source</p>
+      <h2>A pinned historical snapshot</h2>
+      <p>
+        Rift Index uses the machine-friendly
+        <a href="https://github.com/Allan-Cao/lol-voice-lines">Allan-Cao/lol-voice-lines</a>
+        dataset at one immutable commit. The source was cleaned from League of Legends Wiki
+        transcripts and is verified by checksum before indexing.
+      </p>
+      <p>This is a historical snapshot, not a live catalog of every champion released since 2022.</p>
+    </section>
+
+    <section class="prose-section">
+      <p class="section-number">02 / Search</p>
+      <h2>Meaning, not keyword matching</h2>
+      <p>
+        Each transcript becomes a local vector using all-MiniLM-L6-v2. Chroma compares your query
+        to those vectors with cosine distance, so related ideas can surface even without an exact
+        word match.
+      </p>
+      <p>The displayed percentage is a similarity ranking signal. It is not model confidence.</p>
+    </section>
+
+    <section class="prose-section wide-prose">
+      <p class="section-number">03 / Rights &amp; attribution</p>
+      <h2>A community research tool</h2>
+      <p>
+        The upstream dataset repository includes an MIT license. League of Legends, its champions,
+        trademarks, and voice lines belong to Riot Games. Rift Index is not endorsed by Riot Games
+        and does not redistribute game audio.
+      </p>
+    </section>
+  </div>
+{% endblock %}
+

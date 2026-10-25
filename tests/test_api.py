@@ -100,4 +100,3 @@ def test_unavailable_index_reports_health_and_search_error(tmp_path: Path) -> No
     assert health.json()["record_count"] == 0
     assert search.status_code == 503
     assert "python -m app.ingest" in search.json()["detail"]
-

@@ -51,9 +51,7 @@ def test_search_combines_champion_and_line_type_filters(tmp_path: Path) -> None:
     action_results = service.search("food", line_type="action")
     champion_results = service.search("food", champion="Braum", line_type="all")
 
-    assert [(result.champion, result.is_spoken) for result in action_results] == [
-        ("Akali", False)
-    ]
+    assert [(result.champion, result.is_spoken) for result in action_results] == [("Akali", False)]
     assert [result.champion for result in champion_results] == ["Braum"]
 
 
@@ -77,4 +75,3 @@ def test_persistent_client_can_reopen_and_search_existing_index(tmp_path: Path) 
 
     assert reopened.is_ready() is True
     assert reopened.search("food", champion="Kog'Maw")[0].text == "Mmm… food!"
-

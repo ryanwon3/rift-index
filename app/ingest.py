@@ -56,9 +56,7 @@ def parse_dataset(
             raise DatasetIntegrityError(f"row {row_number} has an empty champion or voice line")
         if spoken_value not in {"TRUE", "FALSE"}:
             raise DatasetIntegrityError(f"row {row_number} has invalid is_spoken value")
-        lines.append(
-            VoiceLine(champion=champion, text=text, is_spoken=spoken_value == "TRUE")
-        )
+        lines.append(VoiceLine(champion=champion, text=text, is_spoken=spoken_value == "TRUE"))
 
     checks = (
         ("rows", expected_rows, len(lines)),
@@ -183,8 +181,7 @@ def ingest(
                 ids=[record_id(line) for line in batch],
                 documents=[line.text for line in batch],
                 metadatas=[
-                    {"champion": line.champion, "is_spoken": line.is_spoken}
-                    for line in batch
+                    {"champion": line.champion, "is_spoken": line.is_spoken} for line in batch
                 ],
             )
         collection.modify(metadata=expected_metadata)

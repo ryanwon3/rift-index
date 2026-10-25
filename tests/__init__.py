@@ -1,2 +1,1 @@
 """Rift Index test suite."""
-

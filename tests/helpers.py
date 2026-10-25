@@ -35,4 +35,3 @@ class KeywordEmbedding(EmbeddingFunction[Documents]):
     @staticmethod
     def build_from_config(config: dict[str, object]) -> KeywordEmbedding:
         return KeywordEmbedding()
-
