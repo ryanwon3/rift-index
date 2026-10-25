@@ -25,6 +25,7 @@ def test_container_and_ci_contracts_are_present():
 
     assert "python:3.11" in dockerfile
     assert "python -m app.ingest" in dockerfile
+    assert "/home/rift/.cache/chroma" in dockerfile
     assert "8000:8000" in compose
     assert "/app/.data" in compose
     assert "ruff check" in workflow

@@ -17,7 +17,8 @@ COPY pyproject.toml uv.lock README.md ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 COPY app ./app
-RUN mkdir -p /app/.data /app/.cache && chown -R rift:rift /app
+RUN mkdir -p /app/.data /app/.cache /home/rift/.cache/chroma \
+    && chown -R rift:rift /app /home/rift/.cache
 
 USER rift
 EXPOSE 8000
