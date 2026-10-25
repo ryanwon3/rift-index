@@ -147,8 +147,8 @@ def test_download_dataset_reuses_a_verified_cache_without_network(tmp_path: Path
     assert calls == 0
 
 
-def test_ingest_indexes_in_bounded_batches_and_is_idempotent() -> None:
-    client = chromadb.EphemeralClient()
+def test_ingest_indexes_in_bounded_batches_and_is_idempotent(tmp_path: Path) -> None:
+    client = chromadb.PersistentClient(path=str(tmp_path / "chroma"))
     embedding = TinyEmbedding()
 
     first = ingest(client, sample_lines(), embedding_function=embedding, batch_size=2)
@@ -164,8 +164,24 @@ def test_ingest_indexes_in_bounded_batches_and_is_idempotent() -> None:
     assert collection.metadata["status"] == "ready"
 
 
-def test_ingest_requires_rebuild_for_incompatible_source_metadata() -> None:
-    client = chromadb.EphemeralClient()
+def test_ingest_preserves_exact_duplicate_rows_with_stable_unique_ids(tmp_path: Path) -> None:
+    client = chromadb.PersistentClient(path=str(tmp_path / "chroma"))
+    embedding = TinyEmbedding()
+    duplicate = VoiceLine(champion="Garen", text="Demacia…", is_spoken=True)
+
+    first = ingest(client, [duplicate, duplicate], embedding_function=embedding)
+    collection = client.get_collection(COLLECTION_NAME, embedding_function=embedding)
+    stored_ids = collection.get()["ids"]
+
+    assert first.indexed == 2
+    assert collection.count() == 2
+    assert len(set(stored_ids)) == 2
+    assert record_id(duplicate) in stored_ids
+    assert record_id(duplicate, occurrence=1) in stored_ids
+
+
+def test_ingest_requires_rebuild_for_incompatible_source_metadata(tmp_path: Path) -> None:
+    client = chromadb.PersistentClient(path=str(tmp_path / "chroma"))
     embedding = TinyEmbedding()
     ingest(client, sample_lines(), embedding_function=embedding)
 

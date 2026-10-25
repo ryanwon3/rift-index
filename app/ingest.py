@@ -77,8 +77,12 @@ def parse_dataset(
     return lines
 
 
-def record_id(line: VoiceLine) -> str:
+def record_id(line: VoiceLine, *, occurrence: int = 0) -> str:
+    if occurrence < 0:
+        raise ValueError("occurrence must be non-negative")
     identity = f"{line.champion}\0{line.text}\0{int(line.is_spoken)}"
+    if occurrence:
+        identity = f"{identity}\0{occurrence}"
     return hashlib.sha256(identity.encode("utf-8")).hexdigest()
 
 
@@ -181,11 +185,19 @@ def ingest(
         client.delete_collection(COLLECTION_NAME)
         raise ValueError("batch_size must be at least 1")
 
+    occurrences: dict[tuple[str, str, bool], int] = {}
+    record_ids: list[str] = []
+    for line in lines:
+        identity = (line.champion, line.text, line.is_spoken)
+        occurrence = occurrences.get(identity, 0)
+        record_ids.append(record_id(line, occurrence=occurrence))
+        occurrences[identity] = occurrence + 1
+
     try:
         for start in range(0, len(lines), size):
             batch = lines[start : start + size]
             collection.upsert(
-                ids=[record_id(line) for line in batch],
+                ids=record_ids[start : start + size],
                 documents=[line.text for line in batch],
                 metadatas=[
                     {"champion": line.champion, "is_spoken": line.is_spoken} for line in batch
