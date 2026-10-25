@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 DATASET_COMMIT = "85f70fb891f2471eda8a7a773479106b0d3bf88f"
@@ -11,5 +12,5 @@ EXPECTED_SPOKEN = 31_240
 EXPECTED_ACTIONS = 1_152
 COLLECTION_NAME = "voice_lines_v1"
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
-DATA_DIR = Path(".data")
-CACHE_DIR = Path(".cache")
+DATA_DIR = Path(os.environ.get("RIFT_INDEX_DATA_DIR", ".data"))
+CACHE_DIR = Path(os.environ.get("RIFT_INDEX_CACHE_DIR", ".cache"))

@@ -1,0 +1,15 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - rift-data:/app/.data
+      - rift-source-cache:/app/.cache
+      - rift-model-cache:/home/rift/.cache/chroma
+    restart: unless-stopped
+
+volumes:
+  rift-data:
+  rift-source-cache:
+  rift-model-cache:

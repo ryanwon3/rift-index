@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import csv
 import hashlib
 import io
@@ -10,11 +11,17 @@ from pathlib import Path
 from typing import Any
 
 from app.config import (
+    CACHE_DIR,
     COLLECTION_NAME,
+    DATA_DIR,
     DATASET_COMMIT,
     DATASET_SHA256,
     DATASET_URL,
     EMBEDDING_MODEL,
+    EXPECTED_ACTIONS,
+    EXPECTED_CHAMPIONS,
+    EXPECTED_ROWS,
+    EXPECTED_SPOKEN,
 )
 from app.models import IngestSummary, VoiceLine
 
@@ -195,3 +202,64 @@ def ingest(
         rebuilt=rebuild,
         collection_name=COLLECTION_NAME,
     )
+
+
+def prepare_dataset(destination: Path = CACHE_DIR / "voice_lines.csv") -> list[VoiceLine]:
+    downloaded = download_dataset(destination)
+    return parse_dataset(
+        downloaded.read_bytes(),
+        expected_rows=EXPECTED_ROWS,
+        expected_champions=EXPECTED_CHAMPIONS,
+        expected_spoken=EXPECTED_SPOKEN,
+        expected_actions=EXPECTED_ACTIONS,
+    )
+
+
+def build_local_index(lines: Sequence[VoiceLine], *, rebuild: bool = False) -> IngestSummary:
+    import chromadb
+    from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
+
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    client = chromadb.PersistentClient(path=str(DATA_DIR / "chroma"))
+    return ingest(
+        client,
+        lines,
+        embedding_function=DefaultEmbeddingFunction(),
+        rebuild=rebuild,
+    )
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Verify the pinned League voice-line dataset and build the local Chroma index."
+    )
+    parser.add_argument(
+        "--rebuild",
+        action="store_true",
+        help="replace an existing index instead of requiring compatible metadata",
+    )
+    parser.add_argument(
+        "--verify-source",
+        action="store_true",
+        help=(
+            "verify the download, checksum, and expected counts without loading the embedding model"
+        ),
+    )
+    arguments = parser.parse_args(argv)
+
+    lines = prepare_dataset()
+    if arguments.verify_source:
+        print(f"verified {len(lines):,} rows from source revision {DATASET_COMMIT}")
+        return 0
+
+    summary = build_local_index(lines, rebuild=arguments.rebuild)
+    if summary.skipped:
+        print(f"index already current with {len(lines):,} rows")
+    else:
+        action = "rebuilt" if summary.rebuilt else "indexed"
+        print(f"{action} {summary.indexed:,} rows in {summary.collection_name}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
