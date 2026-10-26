@@ -1,0 +1,11 @@
+.git
+.github
+.venv
+.data
+.cache
+.pytest_cache
+.ruff_cache
+__pycache__
+tests
+docs
+AI_PROMPT_LOG.md

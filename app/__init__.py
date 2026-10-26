@@ -1,0 +1,1 @@
+"""Rift Index application package."""
