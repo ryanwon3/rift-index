@@ -3,7 +3,12 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any, Literal
 
-from app.config import COLLECTION_NAME
+from app.config import (
+    COLLECTION_NAME,
+    DATASET_COMMIT,
+    DATASET_SHA256,
+    EMBEDDING_MODEL,
+)
 from app.models import ChampionSummary, SearchResult
 
 LineType = Literal["spoken", "action", "all"]
@@ -37,7 +42,19 @@ class SearchService:
             COLLECTION_NAME,
             embedding_function=self.embedding_function,
         )
-        if collection.metadata.get("status") != "ready":
+        metadata = collection.metadata or {}
+        expected_metadata = {
+            "source_revision": DATASET_COMMIT,
+            "source_sha256": DATASET_SHA256,
+            "embedding_model": EMBEDDING_MODEL,
+            "distance": "cosine",
+        }
+        if any(metadata.get(key) != value for key, value in expected_metadata.items()):
+            raise IndexUnavailableError(
+                "Voice-line index source or model is incompatible. "
+                "Run `python -m app.ingest --rebuild` first."
+            )
+        if metadata.get("status") != "ready":
             raise IndexUnavailableError(
                 "Voice-line index is not ready. Run `python -m app.ingest --rebuild` first."
             )

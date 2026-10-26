@@ -7,7 +7,7 @@ import pytest
 
 from app.ingest import ingest
 from app.models import VoiceLine
-from app.search import SearchService, cosine_similarity
+from app.search import IndexUnavailableError, SearchService, cosine_similarity
 from tests.helpers import KeywordEmbedding
 
 
@@ -75,3 +75,16 @@ def test_persistent_client_can_reopen_and_search_existing_index(tmp_path: Path) 
 
     assert reopened.is_ready() is True
     assert reopened.search("food", champion="Kog'Maw")[0].text == "Mmm… food!"
+
+
+def test_search_rejects_an_index_built_with_a_different_embedding_model(tmp_path: Path) -> None:
+    service = make_service(tmp_path / "chroma")
+    collection = service.client.get_collection(
+        "voice_lines_v1",
+        embedding_function=service.embedding_function,
+    )
+    collection.modify(metadata={**collection.metadata, "embedding_model": "different-model"})
+
+    assert service.is_ready() is False
+    with pytest.raises(IndexUnavailableError, match="--rebuild"):
+        service.search("food")
