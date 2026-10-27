@@ -4,10 +4,7 @@
   "functions": {
     "app/main.py": {
       "maxDuration": 60,
-      "includeFiles": [
-        ".data/**",
-        ".cache/chroma/onnx_models/all-MiniLM-L6-v2/onnx/**"
-      ],
+      "includeFiles": "{.data/**,.cache/chroma/onnx_models/all-MiniLM-L6-v2/onnx/**}",
       "excludeFiles": "{tests/**,docs/**,.github/**}"
     }
   }

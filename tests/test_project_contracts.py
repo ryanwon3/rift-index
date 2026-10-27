@@ -63,6 +63,7 @@ def test_vercel_build_and_bundle_contracts_are_configured():
     function = config["functions"]["app/main.py"]
     assert config["fluid"] is True
     assert function["maxDuration"] == 60
+    assert isinstance(function["includeFiles"], str)
     assert ".data/**" in function["includeFiles"]
     assert ".cache/chroma/onnx_models/all-MiniLM-L6-v2/onnx/**" in function[
         "includeFiles"
