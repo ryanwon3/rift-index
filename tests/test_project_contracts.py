@@ -67,6 +67,7 @@ def test_vercel_build_and_bundle_contracts_are_configured():
     assert ".cache/chroma/onnx_models/all-MiniLM-L6-v2/onnx/**" in function[
         "includeFiles"
     ]
+    assert isinstance(function["excludeFiles"], str)
     assert "tests/**" in function["excludeFiles"]
 
 

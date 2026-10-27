@@ -8,11 +8,7 @@
         ".data/**",
         ".cache/chroma/onnx_models/all-MiniLM-L6-v2/onnx/**"
       ],
-      "excludeFiles": [
-        "tests/**",
-        "docs/**",
-        ".github/**"
-      ]
+      "excludeFiles": "{tests/**,docs/**,.github/**}"
     }
   }
 }
