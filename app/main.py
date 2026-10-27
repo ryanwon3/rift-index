@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Annotated, Literal
 
 import chromadb
-from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -12,6 +11,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from app.config import DATA_DIR, DATASET_COMMIT, EMBEDDING_MODEL
+from app.embeddings import default_embedding_function
 from app.models import ChampionSummary, SearchResult
 from app.search import IndexUnavailableError, SearchService
 
@@ -43,7 +43,7 @@ class HealthResponse(BaseModel):
 
 def default_search_service() -> SearchService:
     client = chromadb.PersistentClient(path=str(DATA_DIR / "chroma"))
-    return SearchService(client, DefaultEmbeddingFunction())
+    return SearchService(client, default_embedding_function())
 
 
 def create_app(service: SearchService | None = None) -> FastAPI:

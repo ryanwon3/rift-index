@@ -23,6 +23,7 @@ from app.config import (
     EXPECTED_ROWS,
     EXPECTED_SPOKEN,
 )
+from app.embeddings import default_embedding_function
 from app.models import IngestSummary, VoiceLine
 
 
@@ -229,14 +230,13 @@ def prepare_dataset(destination: Path = CACHE_DIR / "voice_lines.csv") -> list[V
 
 def build_local_index(lines: Sequence[VoiceLine], *, rebuild: bool = False) -> IngestSummary:
     import chromadb
-    from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     client = chromadb.PersistentClient(path=str(DATA_DIR / "chroma"))
     return ingest(
         client,
         lines,
-        embedding_function=DefaultEmbeddingFunction(),
+        embedding_function=default_embedding_function(),
         rebuild=rebuild,
     )
 
