@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from app.config import DATA_DIR, DATASET_COMMIT, EMBEDDING_MODEL
 from app.embeddings import default_embedding_function
 from app.models import ChampionSummary, SearchResult
+from app.runtime import runtime_chroma_path
 from app.search import IndexUnavailableError, SearchService
 
 LineType = Literal["spoken", "action", "all"]
@@ -42,7 +43,7 @@ class HealthResponse(BaseModel):
 
 
 def default_search_service() -> SearchService:
-    client = chromadb.PersistentClient(path=str(DATA_DIR / "chroma"))
+    client = chromadb.PersistentClient(path=str(runtime_chroma_path(DATA_DIR)))
     return SearchService(client, default_embedding_function())
 
 
