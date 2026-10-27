@@ -10,4 +10,4 @@ htmlcov/
 .superpowers/
 .DS_Store
 .env
-
+.vercel/

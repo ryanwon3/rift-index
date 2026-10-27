@@ -91,6 +91,36 @@ Open <http://127.0.0.1:8000>. Named volumes preserve the downloaded source,
 model cache, and Chroma index between container restarts. The first container
 start still requires network access and performs the same verified ingestion.
 
+## Deploy to Vercel
+
+Rift Index includes a self-contained Vercel deployment for the existing FastAPI
+application. Vercel detects `app.main:app` from `pyproject.toml` and runs
+`python -m app.vercel_build` after installing the pinned dependencies.
+
+```bash
+vercel login
+vercel link
+vercel deploy              # preview
+vercel deploy --prod       # production
+```
+
+The first remote build typically takes 10–20 minutes because it downloads the
+checksum-pinned CSV and MiniLM model, creates all 32,392 embeddings, and verifies
+the completed Chroma collection. Generated `.data/` and `.cache/` files remain
+outside Git; `vercel.json` includes only the finished Chroma index and extracted
+ONNX model in the function bundle. New Vercel projects may use the
+[Large Functions public beta](https://vercel.com/docs/functions/limitations)
+because Chroma, ONNX Runtime, the model, and the index can exceed the standard
+Python bundle size.
+
+The deployed application filesystem is read-only. During a cold start, Rift
+Index copies the bundled 90 MB Chroma directory into a revision-specific folder
+under Vercel's writable `/tmp` area, opens that copy with `PersistentClient`, and
+reuses it for the lifetime of the warm function instance. The data is rebuilt at
+deployment time, never by a production request. See
+[Vercel's Python runtime documentation](https://vercel.com/docs/functions/runtimes/python)
+for current platform behavior and limits.
+
 ## Commands
 
 ```bash
@@ -186,7 +216,9 @@ make verify-source
 ```
 
 CI runs linting, unit/integration tests, pinned-source verification, and a Docker
-image build. Generated datasets, model files, and indexes are never committed.
+image build. Vercel deployment tests additionally validate bundle paths, model
+archive pruning, exact index readiness, and read-only runtime preparation.
+Generated datasets, model files, and indexes are never committed.
 
 ## Attribution and license
 

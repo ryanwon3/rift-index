@@ -1,8 +1,8 @@
 # AI prompt log
 
-This is the user-authored prompt record for the initial version of Rift Index.
-Entries are dated and reproduced verbatim. Credentials, hidden instructions,
-tool output, and internal reasoning are intentionally excluded.
+This is the user-authored prompt record for Rift Index's initial version and
+deployment. Entries are dated and reproduced verbatim. Credentials, hidden
+instructions, tool output, and internal reasoning are intentionally excluded.
 
 ## 2026-10-25 — Initial request
 
@@ -57,3 +57,19 @@ tool output, and internal reasoning are intentionally excluded.
 > - Audio, champion artwork, analytics, accounts, and user-submitted data are excluded.
 > - First run requires internet access to download the pinned CSV and embedding model; subsequent searches use local persisted files.
 > - GitHub CLI’s saved credentials are currently expired, so implementation pauses only for the required `ryanwon3` browser re-authentication.
+
+## 2026-10-27 — Deployment request
+
+> deploy the website on vercel
+
+## 2026-10-27 — Deployment approach approval
+
+> sure, after youre done give me the vercel link and github link
+
+## 2026-10-27 — Implementation request
+
+> impliment
+
+## 2026-10-27 — Deployment plan approval
+
+> yes

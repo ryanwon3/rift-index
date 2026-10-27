@@ -1,4 +1,6 @@
+import json
 import subprocess
+import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).parents[1]
@@ -49,3 +51,44 @@ def test_public_documentation_contains_required_attribution_and_limits():
     assert "Using python with chroma DB" in prompt_log
     assert "option B is better" in prompt_log
     assert "## Assistant" not in prompt_log
+
+
+def test_vercel_build_and_bundle_contracts_are_configured():
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    vercel = project["tool"]["vercel"]
+    assert vercel["entrypoint"] == "app.main:app"
+    assert vercel["scripts"]["build"] == "python -m app.vercel_build"
+
+    config = json.loads((ROOT / "vercel.json").read_text())
+    function = config["functions"]["app/main.py"]
+    assert config["fluid"] is True
+    assert function["maxDuration"] == 60
+    assert ".data/**" in function["includeFiles"]
+    assert ".cache/chroma/onnx_models/all-MiniLM-L6-v2/onnx/**" in function[
+        "includeFiles"
+    ]
+    assert "tests/**" in function["excludeFiles"]
+
+
+def test_generated_vercel_files_are_excluded_from_source_uploads():
+    ignored = subprocess.run(
+        [
+            "git",
+            "check-ignore",
+            ".data/chroma.sqlite3",
+            ".cache/model.onnx",
+            ".vercel/project.json",
+        ],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert ignored.stdout.splitlines() == [
+        ".data/chroma.sqlite3",
+        ".cache/model.onnx",
+        ".vercel/project.json",
+    ]
+
+    docker_ignores = set((ROOT / ".dockerignore").read_text().splitlines())
+    assert {".data", ".cache", ".vercel"} <= docker_ignores
