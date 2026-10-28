@@ -1,0 +1,33 @@
+FROM ghcr.io/astral-sh/uv:0.13.5 AS uv
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    RIFT_INDEX_DATA_DIR=/app/.data \
+    RIFT_INDEX_CACHE_DIR=/app/.cache
+
+COPY --from=uv /uv /uvx /bin/
+
+RUN useradd --create-home --uid 10001 rift
+WORKDIR /app
+
+COPY pyproject.toml uv.lock README.md ./
+RUN uv sync --frozen --no-dev --no-install-project
+
+COPY app ./app
+COPY .vercel-artifacts/chroma.tar.gz /tmp/rift-index-chroma.tar.gz
+COPY .vercel-artifacts/model.tar.gz /tmp/rift-index-model.tar.gz
+RUN mkdir -p /app/.data /app/.cache \
+    && tar -xzf /tmp/rift-index-chroma.tar.gz -C /app/.data \
+    && tar -xzf /tmp/rift-index-model.tar.gz -C /app/.cache \
+    && rm /tmp/rift-index-chroma.tar.gz /tmp/rift-index-model.tar.gz \
+    && chown -R rift:rift /app
+
+USER rift
+RUN uv run --no-sync python -m app.vercel_build --verify-only
+
+EXPOSE 80
+
+CMD ["sh", "-c", "exec uv run --no-sync uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-80}"]

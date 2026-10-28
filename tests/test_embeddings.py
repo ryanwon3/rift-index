@@ -8,9 +8,7 @@ from chromadb.utils.embedding_functions.onnx_mini_lm_l6_v2 import ONNXMiniLM_L6_
 def test_embedding_model_dir_uses_chroma_default_model_layout() -> None:
     embedding_model_dir = importlib.import_module("app.embeddings").embedding_model_dir
 
-    assert embedding_model_dir(Path("cache")) == Path(
-        "cache/chroma/onnx_models/all-MiniLM-L6-v2"
-    )
+    assert embedding_model_dir(Path("cache")) == Path("cache/chroma/onnx_models/all-MiniLM-L6-v2")
 
 
 def test_default_embedding_function_configures_requested_model_dir(

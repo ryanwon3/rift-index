@@ -12,8 +12,8 @@ API behavior as the local application.
 - Deploy the current `main` branch to a new Vercel project owned by the user.
 - Keep the pinned voice-line dataset, deterministic Chroma index, and local
   `all-MiniLM-L6-v2` query embedding model.
-- Make deployments reproducible from the GitHub repository without committing
-  generated data, model weights, or the Chroma index to Git.
+- Make deployments reproducible from the GitHub repository and pinned source
+  without committing generated data, model weights, or the Chroma index to Git.
 - Verify the preview deployment end to end before promoting it to production.
 - Return both the production Vercel URL and GitHub repository URL.
 
@@ -26,41 +26,43 @@ API behavior as the local application.
 
 ## Constraints
 
-- Vercel Functions have a read-only application filesystem and a writable `/tmp`
-  scratch area. Chroma's SQLite and HNSW files therefore cannot be opened in
-  place from the bundled application.
+- Vercel containers expose an immutable application image and writable `/tmp`
+  scratch area. Rift Index copies Chroma's SQLite and HNSW files once per warm
+  container before opening them.
 - The generated index is about 90 MB and the extracted ONNX model is about 87 MB;
-  the complete Python function may use Vercel's Large Functions path.
-- The first remote build must download and verify the pinned dataset and model,
-  then generate 32,392 embeddings. The observed local build time is about
-  15 minutes, within Vercel's 45-minute build limit.
+  they are split into separate ignored deployment archives below Vercel's
+  per-file upload ceiling.
+- A clean remote build that generated all 32,392 embeddings reached Vercel's
+  45-minute build timeout. Embeddings must therefore be generated and validated
+  before the CLI upload; the remote build only extracts and verifies them.
 
 ## Approaches considered
 
-1. **Self-contained native Python Function (selected).** Generate the index and
-   model during the Vercel build, bundle them as read-only assets, copy the Chroma
-   index into `/tmp` during function initialization, and query it locally. This
-   preserves the existing architecture without another service, at the cost of a
-   larger bundle and cold start.
-2. **Container image.** Build the application and index into `Dockerfile.vercel`.
-   This is close to the current Docker workflow but adds container cold-start
-   overhead and does not remove the ephemeral-filesystem constraint.
+1. **Self-contained native Python Function.** This preserved the existing
+   architecture, but query-time ONNX execution terminated the native process in
+   production after multiple runtime hypotheses were tested and disproved.
+2. **Container image with prebuilt runtime artifacts (selected).** Validate and
+   archive the local Chroma index and extracted model, then unpack and revalidate
+   them in `Dockerfile.vercel`. This preserves local inference without another
+   service. Its tradeoffs are larger uploads/images and container cold starts.
 3. **Hosted Chroma.** Use an external Chroma service. This produces a smaller,
    faster function but introduces credentials, an additional service, and
    possible cost, contrary to the local-first project goal.
 
 ## Deployment shape
 
-- Keep `app/main.py` as the Vercel-detected FastAPI entrypoint.
-- Add a Vercel build module that runs the existing verified ingestion pipeline,
-  stores deployment data under generated Vercel-only directories, removes the
-  redundant downloaded model archive, and validates the finished index.
+- Use `Dockerfile.vercel` to install locked Python 3.11 dependencies, extract
+  ignored deployment artifacts, validate the record count/metadata, and run a
+  real 384-dimensional embedding smoke test before the image is accepted.
+- Add a packaging module that validates the local index and model, archives only
+  the Chroma index and extracted `onnx/` directory, and excludes the raw CSV and
+  redundant model download archive.
 - Add an embedding-function factory so local development continues using the
   normal cache while Vercel uses the bundled extracted ONNX files.
 - At Vercel runtime, copy the bundled Chroma directory once per function instance
   into a revision-specific `/tmp` directory before creating `PersistentClient`.
-- Add `vercel.json` to include generated data/model assets, exclude development
-  files, and set an appropriate initialization duration.
+- Add `.vercelignore` so the CLI uploads the ignored runtime archives while
+  excluding local caches, tests, and development files.
 - Keep `.data`, model caches, Vercel output, and project-link metadata outside Git.
 
 ## Verification and release

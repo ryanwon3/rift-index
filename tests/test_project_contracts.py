@@ -44,32 +44,49 @@ def test_public_documentation_contains_required_attribution_and_limits():
     assert "32,392" in readme
     assert "163 champions" in readme
     assert "First run" in readme
+    assert "something to eat before a battle" in readme
+    assert "staying brave when you are afraid" in readme
+    assert "One CSV row becomes one Chroma item" in readme
+    assert "PersistentClient" in readme
     assert "not affiliated with Riot Games" in readme
     assert "Allan-Cao/lol-voice-lines" in readme
     assert "MIT License" in notices
     assert "Riot Games" in notices
     assert "Using python with chroma DB" in prompt_log
     assert "option B is better" in prompt_log
+    assert "Before updating, give me the planned readme for me to edit" in prompt_log
+    assert "looks good, continue" in prompt_log
     assert "## Assistant" not in prompt_log
 
 
-def test_vercel_build_and_bundle_contracts_are_configured():
+def test_vercel_container_build_and_runtime_contracts_are_configured():
+    dockerfile = (ROOT / "Dockerfile.vercel").read_text()
     project = tomllib.loads((ROOT / "pyproject.toml").read_text())
-    vercel = project["tool"]["vercel"]
-    assert vercel["entrypoint"] == "app.main:app"
-    assert vercel["scripts"]["build"] == "python -m app.vercel_build"
+    assert "vercel" not in project.get("tool", {})
+
+    assert "FROM python:3.11-slim" in dockerfile
+    assert "uv sync --frozen --no-dev --no-install-project" in dockerfile
+    assert "COPY .vercel-artifacts/chroma.tar.gz" in dockerfile
+    assert "COPY .vercel-artifacts/model.tar.gz" in dockerfile
+    assert "python -m app.vercel_build --verify-only" in dockerfile
+    assert "python -m app.vercel_build\n" not in dockerfile
+    assert "EXPOSE 80" in dockerfile
+    assert "uvicorn app.main:app" in dockerfile
+    assert "--port ${PORT:-80}" in dockerfile
+    command = dockerfile.split("CMD", maxsplit=1)[1]
+    assert "python -m app.ingest" not in command
 
     config = json.loads((ROOT / "vercel.json").read_text())
-    function = config["functions"]["app/main.py"]
     assert config["fluid"] is True
-    assert function["maxDuration"] == 60
-    assert isinstance(function["includeFiles"], str)
-    assert ".data/**" in function["includeFiles"]
-    assert ".cache/chroma/onnx_models/all-MiniLM-L6-v2/onnx/**" in function[
-        "includeFiles"
-    ]
-    assert isinstance(function["excludeFiles"], str)
-    assert "tests/**" in function["excludeFiles"]
+    assert "functions" not in config
+
+    makefile = (ROOT / "Makefile").read_text()
+    assert "vercel-package:" in makefile
+    assert "python -m app.package_vercel" in makefile
+
+    readme = (ROOT / "README.md").read_text()
+    assert "vercel deploy --prod --skip-domain" in readme
+    assert "vercel promote <tested-production-url>" in readme
 
 
 def test_generated_vercel_files_are_excluded_from_source_uploads():
@@ -80,6 +97,7 @@ def test_generated_vercel_files_are_excluded_from_source_uploads():
             ".data/chroma.sqlite3",
             ".cache/model.onnx",
             ".vercel/project.json",
+            ".vercel-artifacts/chroma.tar.gz",
         ],
         cwd=ROOT,
         check=True,
@@ -90,7 +108,13 @@ def test_generated_vercel_files_are_excluded_from_source_uploads():
         ".data/chroma.sqlite3",
         ".cache/model.onnx",
         ".vercel/project.json",
+        ".vercel-artifacts/chroma.tar.gz",
     ]
 
     docker_ignores = set((ROOT / ".dockerignore").read_text().splitlines())
     assert {".data", ".cache", ".vercel"} <= docker_ignores
+    assert ".vercel-artifacts" not in docker_ignores
+
+    vercel_ignores = set((ROOT / ".vercelignore").read_text().splitlines())
+    assert {".data", ".cache", ".vercel", "tests", "docs"} <= vercel_ignores
+    assert ".vercel-artifacts" not in vercel_ignores

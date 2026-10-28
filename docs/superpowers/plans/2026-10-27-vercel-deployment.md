@@ -4,9 +4,9 @@
 
 **Goal:** Deploy Rift Index as a verified public Vercel FastAPI application while retaining bundled MiniLM embeddings and Chroma semantic search.
 
-**Architecture:** Vercel's build step will run the existing verified ingestion pipeline and bundle the generated Chroma index plus extracted ONNX model. At runtime, the FastAPI function will copy the immutable Chroma files into a revision-specific directory under writable `/tmp`, then open that copy with `PersistentClient`; local and Docker workflows will continue using `.data` directly.
+**Architecture:** A local packaging step validates the existing index and performs a real MiniLM inference smoke test, then creates ignored Chroma/model archives without the raw CSV. Vercel's Container Runtime extracts and revalidates those archives while building a Python 3.11 image. At runtime, FastAPI copies the immutable Chroma files into a revision-specific directory under writable `/tmp`, then opens that copy with `PersistentClient`; local and Docker workflows continue using `.data` directly.
 
-**Tech Stack:** Python 3.12 on Vercel Functions, FastAPI, Chroma 1.5.9, ONNX MiniLM, pytest, Ruff, Vercel CLI
+**Tech Stack:** Python 3.11 on Vercel Container Runtime, FastAPI, Chroma 1.5.9, ONNX MiniLM, pytest, Ruff, Vercel CLI
 
 **Spec:** `docs/superpowers/specs/2026-10-27-vercel-deployment-design.md`
 
@@ -22,9 +22,9 @@
 ## Review Focus
 
 - Missing bundled Chroma source must fail initialization clearly instead of creating an empty production index; Task 2 tests this.
-- A warm function instance must reuse its `/tmp` copy rather than copy 90 MB on every request; Task 2 tests this.
+- A warm container instance must reuse its `/tmp` copy rather than copy 90 MB on every request; Task 2 tests this.
 - Local and Docker execution must continue opening `.data/chroma` directly; Task 2 tests this.
-- A complete extracted model must remain usable after the redundant download archive is removed; Task 3 tests this.
+- A complete extracted model must remain usable while the redundant download archive is excluded; Task 5 tests this with a real inference smoke test.
 - Build output with a wrong record count or incompatible metadata must fail before deployment; Task 3 tests this.
 
 ---
@@ -192,3 +192,43 @@ Create a production deployment without assigning the production domain, repeat t
 
 Check Vercel runtime logs for errors since deployment, confirm the GitHub Actions workflow is green, and run `git status --short` plus `git rev-parse HEAD`/`git rev-parse origin/main` to prove the checkout is clean and synchronized.
 
+### Task 5: Container-runtime pivot
+
+**Files:**
+- Create: `Dockerfile.vercel`
+- Modify: `vercel.json`
+- Modify: `README.md`
+- Modify: `tests/test_project_contracts.py`
+
+**Interfaces:**
+- Consumes: `python -m app.vercel_build`, `app.main:app`, Vercel Container Runtime port resolution.
+- Produces: a build-time-verified OCI image that serves the existing FastAPI application on `${PORT:-80}` without runtime ingestion.
+
+- [x] **Step 1: Write failing container-contract tests**
+
+Add tests asserting `Dockerfile.vercel` uses Python 3.11, installs the locked production dependencies, validates the prebuilt Chroma/model artifacts during image construction, starts Uvicorn on `${PORT:-80}`, and never runs ingestion from `CMD`. Assert `vercel.json` no longer configures the native `app/main.py` function. Test the artifact packager independently and prove that it excludes the raw CSV.
+
+- [x] **Step 2: Run the focused tests and verify failure**
+
+Run: `.venv/bin/pytest tests/test_project_contracts.py -v`
+Expected: FAIL because `Dockerfile.vercel` does not exist and native Python Function configuration remains.
+
+- [x] **Step 3: Implement the container contract**
+
+Create `Dockerfile.vercel` from the existing locked Python image workflow, unpack and verify the locally generated model and Chroma artifacts as the non-root user, expose port 80, and start the existing FastAPI app without ingestion. Add `app.package_vercel` and `make vercel-package` so the ignored artifacts are generated only after the local index passes metadata/count validation. Reduce `vercel.json` to container-compatible project configuration and update the README deployment explanation.
+
+- [x] **Step 4: Run focused and full local verification**
+
+Run: `.venv/bin/pytest tests/test_project_contracts.py -v`
+Expected: PASS.
+
+Run: `.venv/bin/ruff check . && .venv/bin/ruff format --check . && .venv/bin/pytest`
+Expected: all checks pass.
+
+- [x] **Step 5: Deploy and verify before production**
+
+Set the linked Vercel project's framework to Container. The clean remote-ingestion preview must be allowed to reach a definitive result; if it exceeds Vercel's 45-minute build limit, package the locally verified artifacts instead of performing inference during the remote build. Deploy a protected preview and verify `/`, `/health`, `/api/champions`, and `/api/search`. Stage a production deployment with `--skip-domain`, repeat the checks, then promote that exact deployment.
+
+- [ ] **Step 6: Commit and synchronize**
+
+Commit the container contract and approved README update, push `main`, confirm GitHub Actions succeeds, scan production runtime logs, and verify local `HEAD` matches `origin/main`.

@@ -1,6 +1,6 @@
 UV ?= uv
 
-.PHONY: setup ingest rebuild verify-source run test lint format
+.PHONY: setup ingest rebuild verify-source vercel-package run test lint format
 
 setup:
 	$(UV) sync --frozen --extra dev
@@ -13,6 +13,9 @@ rebuild: setup
 
 verify-source: setup
 	$(UV) run --no-sync python -m app.ingest --verify-source
+
+vercel-package: ingest
+	$(UV) run --no-sync python -m app.package_vercel
 
 run: setup
 	$(UV) run --no-sync python -m app.ingest

@@ -12,3 +12,4 @@ htmlcov/
 .env
 .env.local
 .vercel/
+.vercel-artifacts/
